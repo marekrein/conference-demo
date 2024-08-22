@@ -26,7 +26,6 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("*/h2-console/**").permitAll()
                         .requestMatchers("*/api/v1/conferences/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
