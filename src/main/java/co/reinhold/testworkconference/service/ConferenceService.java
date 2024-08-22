@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.reinhold.testworkconference.dto.ConferenceCreateRequest;
 import co.reinhold.testworkconference.dto.ConferenceDto;
+import co.reinhold.testworkconference.exception.ConferenceNotFoundException;
 import co.reinhold.testworkconference.mapper.ConferenceMapper;
 import co.reinhold.testworkconference.model.Conference;
 import co.reinhold.testworkconference.model.Participant;
@@ -32,32 +33,44 @@ public class ConferenceService {
 
     @Transactional
     public void cancelConference(Long conferenceId) {
-        log.info("Delete conference - id: {}", conferenceId);
-        Conference conference = conferenceRepository.findById(conferenceId)
-                .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+        log.info("Delete conference: {}", conferenceId);
+        Conference conference = getConference(conferenceId);
         conference.setActive(false);
         Conference updatedConference = conferenceRepository.save(conference);
-        log.info("Conference deleted - id: {} | isActive: {}", updatedConference.getId(), updatedConference.isActive());
+        log.info("Conference deleted: {}", updatedConference.getId());
     }
 
     @Transactional(readOnly = true)
     public boolean isRoomAvailable(Long conferenceId) {
-        Conference conference = conferenceRepository.findById(conferenceId).orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+        Conference conference = getConference(conferenceId);
         return conference.isRoomAvailable();
     }
 
     @Transactional
     public void addParticipantToConference(Long conferenceId, Long participantId) {
-        Conference conference = conferenceRepository.findById(conferenceId).orElseThrow(() -> new IllegalArgumentException("Conference not found"));
-        Participant participant = participantService.findParticipantById(participantId);
+        log.info("Add participant: {} to conference: {}", participantId, conferenceId);
+        Conference conference = getConference(conferenceId);
+        Participant participant = getParticipant(participantId);
         conference.addParticipant(participant);
+        log.info("Participant: {} added to conference: {}", participantId, conferenceId);
     }
 
     @Transactional
     public void removeParticipantFromConference(Long conferenceId, Long participantId) {
-        Conference conference = conferenceRepository.findById(conferenceId).orElseThrow(() -> new IllegalArgumentException("Conference not found"));
-        Participant participant = participantService.findParticipantById(participantId);
+        log.info("Remove participant: {} from conference: {}", participantId, conferenceId);
+        Conference conference = getConference(conferenceId);
+        Participant participant = getParticipant(participantId);
         conference.removeParticipant(participant);
+        log.info("Participant: {} removed from conference: {}", participantId, conferenceId);
+    }
+
+    private Participant getParticipant(Long participantId) {
+        return participantService.findParticipantById(participantId);
+    }
+
+    private Conference getConference(Long conferenceId) {
+        return conferenceRepository.findById(conferenceId)
+                .orElseThrow(() -> new ConferenceNotFoundException("Conference not found with ID: %d".formatted(conferenceId)));
     }
 
 }
