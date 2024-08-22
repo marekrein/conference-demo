@@ -7,5 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record ConferenceCreateRequest(@NotBlank @Size(max = 100) String name,
+                                      int roomCapacity,
                                       @NotNull LocalDateTime startDate,
                                       @NotNull LocalDateTime endDate) {}

@@ -1,8 +1,5 @@
 package co.reinhold.testworkconference.service;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

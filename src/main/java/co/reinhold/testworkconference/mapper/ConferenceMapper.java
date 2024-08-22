@@ -15,7 +15,6 @@ public abstract class ConferenceMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "active", ignore = true)
-    @Mapping(target = "room", ignore = true)
     @Mapping(target = "participants", ignore = true)
     public abstract Conference toEntity(ConferenceCreateRequest conferenceCreateRequest);
 

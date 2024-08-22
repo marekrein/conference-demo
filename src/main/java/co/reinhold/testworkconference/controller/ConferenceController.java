@@ -36,7 +36,7 @@ public class ConferenceController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)//todo
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelConference(@PathVariable("id") Long conferenceId) {
         conferenceService.cancelConference(conferenceId);
     }
@@ -52,15 +52,14 @@ public class ConferenceController {
     @PostMapping("/{conferenceId}/participants/{participantId}")
     public ResponseEntity<String> addParticipant(@PathVariable Long conferenceId, @PathVariable Long participantId) {
         conferenceService.addParticipantToConference(conferenceId, participantId);
-        return ResponseEntity.ok("Participant added successfully");//todo
+        return ResponseEntity.ok("Participant added successfully");
     }
 
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @DeleteMapping("/{conferenceId}/participants/{participantId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)//todo
-    public ResponseEntity<String> removeParticipant(@PathVariable Long conferenceId, @PathVariable Long participantId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeParticipant(@PathVariable Long conferenceId, @PathVariable Long participantId) {
         conferenceService.removeParticipantFromConference(conferenceId, participantId);
-        return ResponseEntity.ok("Participant removed successfully");
     }
 
 }

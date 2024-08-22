@@ -8,14 +8,11 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -51,29 +48,11 @@ public class Conference {
 
     @Future
     @NotNull
-    @Column
     private LocalDateTime endDate;
 
     private boolean active;
 
-    @OneToOne(
-            mappedBy = "conference",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
-    private Room room;
-
-    public void setRoom(Room room) {
-        if (room == null) {
-            if (this.room != null) {
-                this.room.setConference(null);
-            }
-        } else {
-            room.setConference(this);
-        }
-        this.room = room;
-    }
+    private int roomCapacity;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "conference",
@@ -104,6 +83,10 @@ public class Conference {
     @Override
     public int hashCode() {
         return Objects.hash(name, startDate, endDate);
+    }
+
+    public boolean isRoomAvailable() {
+        return this.roomCapacity > this.participants.size();
     }
 
 }

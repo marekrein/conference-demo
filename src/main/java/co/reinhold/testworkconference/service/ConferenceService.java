@@ -8,7 +8,6 @@ import co.reinhold.testworkconference.dto.ConferenceDto;
 import co.reinhold.testworkconference.mapper.ConferenceMapper;
 import co.reinhold.testworkconference.model.Conference;
 import co.reinhold.testworkconference.model.Participant;
-import co.reinhold.testworkconference.model.Room;
 import co.reinhold.testworkconference.repository.ConferenceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,13 +43,7 @@ public class ConferenceService {
     @Transactional(readOnly = true)
     public boolean isRoomAvailable(Long conferenceId) {
         Conference conference = conferenceRepository.findById(conferenceId).orElseThrow(() -> new IllegalArgumentException("Conference not found"));
-        Room conferenceRoom = conference.getRoom();
-        if (conferenceRoom == null) {
-            return false; // or throw an exception
-        }
-
-        int participantCount = conference.getParticipants().size();
-        return conferenceRoom.getCapacity() > participantCount;
+        return conference.isRoomAvailable();
     }
 
     @Transactional
