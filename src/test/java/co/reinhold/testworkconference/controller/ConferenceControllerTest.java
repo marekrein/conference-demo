@@ -14,9 +14,18 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import co.reinhold.testworkconference.dto.ConferenceCreateRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConferenceControllerTest {
+
+    private static final String API_URL = "/api/v1/conferences";
+    private static final String ADMIN_USER = "admin_user";
+    private static final String ADMIN_PASS = "adminpass";
+    private static final String USER_JANE = "jane_smith";
+    private static final String USER_JANE_PASS = "securepassword";
+    private static final String CONFERENCE_TITLE = "Conference Title";
+    private static final String INCORRECT_PASSWORD = "incorrect_password";
 
     @LocalServerPort private int port;
 
@@ -28,62 +37,36 @@ public class ConferenceControllerTest {
     @Nested
     class ConferenceCreate {
 
+        private final String CREATE_URL = "%s/create".formatted(API_URL);
+        private final LocalDateTime START_DATE = LocalDateTime.of(2024, 11, 1, 1, 1, 1);
+        private final LocalDateTime END_DATE = LocalDateTime.of(2024, 11, 5, 10, 10, 1);
+
         @Test
         public void shouldCreateConference_WhenAdminRole() {
-            String conferenceTitle = "Conference Title";
-            var startDate = LocalDateTime.of(2024, 11, 1, 1, 1, 1);
-            var endDate = LocalDateTime.of(2024, 11, 5, 10, 10, 1);
-            var createRequest = new ConferenceCreateRequest(conferenceTitle, 10, startDate, endDate);
-
-            given()
-                    .auth()
-                    .preemptive()
-                    .basic("admin_user", "adminpass")
-                    .contentType(ContentType.JSON)
-                    .body(createRequest)
-                    .when()
-                    .post("/api/v1/conferences/create")
+            var createRequest = new ConferenceCreateRequest(CONFERENCE_TITLE, 10, START_DATE, END_DATE);
+            commonSetup(ADMIN_USER, ADMIN_PASS, createRequest)
+                    .post(CREATE_URL)
                     .then()
                     .statusCode(201)
-                    .body("name", is(conferenceTitle))
+                    .body("name", is(CONFERENCE_TITLE))
                     .body("startDate", is("2024-11-01T01:01:01"))
                     .body("endDate", is("2024-11-05T10:10:01"));
         }
 
         @Test
         public void shouldNotCreateConference_WhenNotAdminRole() {
-            String conferenceTitle = "Conference Title";
-            var startDate = LocalDateTime.of(2024, 11, 1, 1, 1, 1);
-            var endDate = LocalDateTime.of(2024, 11, 5, 10, 10, 1);
-            var createRequest = new ConferenceCreateRequest(conferenceTitle, 10, startDate, endDate);
-
-            given()
-                    .auth()
-                    .preemptive()
-                    .basic("jane_smith", "securepassword")
-                    .contentType(ContentType.JSON)
-                    .body(createRequest)
-                    .when()
-                    .post("/api/v1/conferences/create")
+            var createRequest = new ConferenceCreateRequest(CONFERENCE_TITLE, 10, START_DATE, END_DATE);
+            commonSetup(USER_JANE, USER_JANE_PASS, createRequest)
+                    .post(CREATE_URL)
                     .then()
                     .statusCode(403);
         }
 
         @Test
         public void shouldNotCreateConference_WhenNotCorrectCredentials() {
-            String conferenceTitle = "Conference Title";
-            var startDate = LocalDateTime.of(2024, 11, 1, 1, 1, 1);
-            var endDate = LocalDateTime.of(2024, 11, 5, 10, 10, 1);
-            var createRequest = new ConferenceCreateRequest(conferenceTitle, 10, startDate, endDate);
-
-            given()
-                    .auth()
-                    .preemptive()
-                    .basic("admin_user", "incorrect_password")
-                    .contentType(ContentType.JSON)
-                    .body(createRequest)
-                    .when()
-                    .post("/api/v1/conferences/create")
+            var createRequest = new ConferenceCreateRequest(CONFERENCE_TITLE, 10, START_DATE, END_DATE);
+            commonSetup(ADMIN_USER, INCORRECT_PASSWORD, createRequest)
+                    .post(API_URL + "/create")
                     .then()
                     .statusCode(401);
         }
@@ -98,9 +81,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("admin_user", "adminpass")
+                    .basic(ADMIN_USER, ADMIN_PASS)
                     .when()
-                    .delete("/api/v1/conferences/{id}", 100L)
+                    .delete("%s/{id}".formatted(API_URL), 100L)
                     .then()
                     .statusCode(204);
         }
@@ -110,9 +93,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("jane_smith", "securepassword")
+                    .basic(USER_JANE, USER_JANE_PASS)
                     .when()
-                    .delete("/api/v1/conferences/{id}", 1L)
+                    .delete("%s/{id}".formatted(API_URL), 1L)
                     .then()
                     .statusCode(403);
         }
@@ -122,9 +105,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("admin_user", "incorrect_password")
+                    .basic(ADMIN_USER, INCORRECT_PASSWORD)
                     .when()
-                    .delete("/api/v1/conferences/{id}", 1L)
+                    .delete("%s/{id}".formatted(API_URL), 1L)
                     .then()
                     .statusCode(401);
         }
@@ -134,14 +117,16 @@ public class ConferenceControllerTest {
     @Nested
     class ConferenceCheckAvailability {
 
+        private static final String CHECK_AVAILABILITY_URL = "/{id}/check-availability";
+
         @Test
         public void shouldCheckRoomAvailability_WhenUserRole() {
             given()
                     .auth()
                     .preemptive()
-                    .basic("jane_smith", "securepassword")
+                    .basic(USER_JANE, USER_JANE_PASS)
                     .when()
-                    .get("/api/v1/conferences/{id}/check-availability", 100L)
+                    .get("%s%s".formatted(API_URL, CHECK_AVAILABILITY_URL), 100L)
                     .then()
                     .statusCode(200)
                     .body(is("true"));
@@ -152,9 +137,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("admin_user", "adminpass")
+                    .basic(ADMIN_USER, ADMIN_PASS)
                     .when()
-                    .get("/api/v1/conferences/{id}/check-availability", 100L)
+                    .get("%s%s".formatted(API_URL, CHECK_AVAILABILITY_URL), 100L)
                     .then()
                     .statusCode(200)
                     .body(is("true"));
@@ -167,7 +152,7 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("wrong_user", "wrongpass")
                     .when()
-                    .get("/api/v1/conferences/{id}/check-availability", 1L)
+                    .get("%s%s".formatted(API_URL, CHECK_AVAILABILITY_URL), 1L)
                     .then()
                     .statusCode(401);
         }
@@ -179,7 +164,7 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("john_doe", "password123456")
                     .when()
-                    .get("/api/v1/conferences/{id}/check-availability", 1L)
+                    .get("%s%s".formatted(API_URL, CHECK_AVAILABILITY_URL), 1L)
                     .then()
                     .statusCode(403);
         }
@@ -189,6 +174,8 @@ public class ConferenceControllerTest {
     @Nested
     class ConferenceAddParticipant {
 
+        private static final String CONFERENCE_PARTICIPANT_URL = "/{conferenceId}/participants/{participantId}";
+
         @Test
         public void shouldAddParticipant_WhenUserRole() {
             Long conferenceId = 300L;
@@ -197,9 +184,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("jane_smith", "securepassword")
+                    .basic(USER_JANE, USER_JANE_PASS)
                     .when()
-                    .post("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .post("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(200)
                     .body(is("Participant added successfully"));
@@ -213,9 +200,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("admin_user", "adminpass")
+                    .basic(ADMIN_USER, ADMIN_PASS)
                     .when()
-                    .post("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .post("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(200)
                     .body(is("Participant added successfully"));
@@ -231,7 +218,7 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("wrong_user", "wrongpass")
                     .when()
-                    .post("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .post("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(401);
         }
@@ -246,7 +233,7 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("john_doe", "password123456")
                     .when()
-                    .post("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .post("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(403);
         }
@@ -256,6 +243,8 @@ public class ConferenceControllerTest {
     @Nested
     class ConferenceRemoveParticipant {
 
+        private static final String CONFERENCE_PARTICIPANT_URL = "/{conferenceId}/participants/{participantId}";
+
         @Test
         public void shouldRemoveParticipant_WhenUserRole() {
             Long conferenceId = 100L;
@@ -264,9 +253,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("jane_smith", "securepassword")
+                    .basic(USER_JANE, USER_JANE_PASS)
                     .when()
-                    .delete("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .delete(API_URL + CONFERENCE_PARTICIPANT_URL, conferenceId, participantId)
                     .then()
                     .statusCode(204);
         }
@@ -279,9 +268,9 @@ public class ConferenceControllerTest {
             given()
                     .auth()
                     .preemptive()
-                    .basic("admin_user", "adminpass")
+                    .basic(ADMIN_USER, ADMIN_PASS)
                     .when()
-                    .delete("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .delete("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(204);
         }
@@ -296,7 +285,7 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("wrong_user", "wrongpass")
                     .when()
-                    .delete("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .delete("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(401);
         }
@@ -311,11 +300,21 @@ public class ConferenceControllerTest {
                     .preemptive()
                     .basic("john_doe", "password123456")
                     .when()
-                    .delete("/api/v1/conferences/{conferenceId}/participants/{participantId}", conferenceId, participantId)
+                    .delete("%s%s".formatted(API_URL, CONFERENCE_PARTICIPANT_URL), conferenceId, participantId)
                     .then()
                     .statusCode(403);
         }
 
+    }
+
+    private RequestSpecification commonSetup(String username, String password, Object body) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic(username, password)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when();
     }
 
 }
