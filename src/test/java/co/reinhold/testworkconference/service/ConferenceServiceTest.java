@@ -27,10 +27,10 @@ import co.reinhold.testworkconference.repository.ConferenceRepository;
 @ExtendWith(MockitoExtension.class)
 class ConferenceServiceTest {
 
+    @InjectMocks private ConferenceService subject;
     @Mock private ConferenceMapper conferenceMapper;
     @Mock private ParticipantService participantService;
     @Mock private ConferenceRepository conferenceRepository;
-    @InjectMocks private ConferenceService conferenceService;
 
     private Conference conference;
     private ConferenceDto conferenceDto;
@@ -55,7 +55,7 @@ class ConferenceServiceTest {
         when(conferenceRepository.save(any(Conference.class))).thenReturn(conference);
         when(conferenceMapper.toDto(any(Conference.class))).thenReturn(conferenceDto);
 
-        ConferenceDto result = conferenceService.createConference(conferenceCreateRequest);
+        ConferenceDto result = subject.createConference(conferenceCreateRequest);
 
         assertThat(result)
                 .isNotNull()
@@ -78,7 +78,7 @@ class ConferenceServiceTest {
         when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
         when(conferenceRepository.save(any(Conference.class))).thenReturn(conference);
 
-        conferenceService.cancelConference(conferenceId);
+        subject.cancelConference(conferenceId);
 
         verify(conferenceRepository, times(1)).findById(conferenceId);
         verify(conferenceRepository, times(1)).save(conference);
@@ -96,7 +96,7 @@ class ConferenceServiceTest {
 
         when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
 
-        boolean isAvailable = conferenceService.isRoomAvailable(conferenceId);
+        boolean isAvailable = subject.isRoomAvailable(conferenceId);
 
         verify(conferenceRepository, times(1)).findById(conferenceId);
         assertThat(isAvailable).isFalse();
@@ -113,7 +113,7 @@ class ConferenceServiceTest {
 
         when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
 
-        boolean isAvailable = conferenceService.isRoomAvailable(conferenceId);
+        boolean isAvailable = subject.isRoomAvailable(conferenceId);
 
         verify(conferenceRepository, times(1)).findById(conferenceId);
         assertThat(isAvailable).isTrue();
@@ -130,7 +130,7 @@ class ConferenceServiceTest {
         when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
         when(participantService.findParticipantById(participantId)).thenReturn(participant);
 
-        conferenceService.addParticipantToConference(conferenceId, participantId);
+        subject.addParticipantToConference(conferenceId, participantId);
 
         verify(conferenceRepository, times(1)).findById(conferenceId);
         verify(participantService, times(1)).findParticipantById(participantId);
@@ -151,7 +151,7 @@ class ConferenceServiceTest {
         when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
         when(participantService.findParticipantById(participantId)).thenReturn(participant);
 
-        conferenceService.removeParticipantFromConference(conferenceId, participantId);
+        subject.removeParticipantFromConference(conferenceId, participantId);
 
         verify(conferenceRepository, times(1)).findById(conferenceId);
         verify(participantService, times(1)).findParticipantById(participantId);
